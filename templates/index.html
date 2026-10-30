@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Deteksi Pelanggaran Parkir Liar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0c1118; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Soft background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 20% 10%, rgba(99,102,241,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 80% 80%, rgba(20,184,166,0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Pulse dot */
+        @keyframes soft-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); opacity:1; }
+            50% { box-shadow: 0 0 0 5px rgba(248,113,113,0); opacity:0.8; }
+        }
+        .pulse-dot { animation: soft-pulse 2s ease-in-out infinite; }
+
+        /* Scanline */
+        .scanline {
+            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+            pointer-events: none;
+        }
+
+        /* Soft glass card */
+        .glass-card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border: 1px solid rgba(99,102,241,0.5);
+            color: #fff;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 12px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.18);
+            color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        /* Tombol perbesar */
+        .btn-expand {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-expand:hover {
+            background: rgba(99,102,241,0.12);
+            border-color: rgba(99,102,241,0.4);
+            color: #c7d2fe;
+        }
+
+        /* File input */
+        .file-drop {
+            border: 1.5px dashed rgba(99,102,241,0.3);
+            background: rgba(99,102,241,0.04);
+            border-radius: 10px;
+            padding: 8px 10px;
+            transition: all 0.25s;
+            cursor: pointer;
+        }
+        .file-drop:hover {
+            border-color: rgba(99,102,241,0.55);
+            background: rgba(99,102,241,0.07);
+        }
+        .file-drop input[type="file"] {
+            width: 100%;
+            font-size: 11px;
+            color: #64748b;
+            cursor: pointer;
+        }
+        .file-drop input[type="file"]::file-selector-button {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border: none;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.02em;
+        }
+        .file-drop input[type="file"]::file-selector-button:hover {
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+        }
+
+        /* Alert badge */
+        @keyframes alert-glow {
+            0%, 100% { box-shadow: 0 0 8px rgba(248,113,113,0.3); }
+            50% { box-shadow: 0 0 18px rgba(248,113,113,0.5); }
+        }
+        .alert-badge { animation: alert-glow 2.5s ease-in-out infinite; }
+
+        /* Corner brackets */
+        .corner { position: absolute; width: 14px; height: 14px; }
+        .corner-tl { top: 8px; left: 8px; border-top: 1.5px solid rgba(99,102,241,0.4); border-left: 1.5px solid rgba(99,102,241,0.4); border-radius: 3px 0 0 0; }
+        .corner-tr { top: 8px; right: 8px; border-top: 1.5px solid rgba(99,102,241,0.4); border-right: 1.5px solid rgba(99,102,241,0.4); border-radius: 0 3px 0 0; }
+        .corner-bl { bottom: 8px; left: 8px; border-bottom: 1.5px solid rgba(99,102,241,0.4); border-left: 1.5px solid rgba(99,102,241,0.4); border-radius: 0 0 0 3px; }
+        .corner-br { bottom: 8px; right: 8px; border-bottom: 1.5px solid rgba(99,102,241,0.4); border-right: 1.5px solid rgba(99,102,241,0.4); border-radius: 0 0 3px 0; }
+
+        /* Stat card */
+        .stat-card {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 8px 12px;
+            transition: border-color 0.2s;
+        }
+        .stat-card:hover { border-color: rgba(255,255,255,0.12); }
+
+        /* Video: ukuran mengikuti sisa tinggi layar, rasio 16:9 tetap */
+        #videoBox { aspect-ratio: 16 / 9; max-width: 100%; max-height: 100%; }
+        @media (min-width: 1024px) {
+            #videoBox { height: 100%; }
+        }
+
+        /* Mode layar penuh */
+        #videoBox:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            aspect-ratio: auto;
+            background: #000;
+        }
+        #videoBox:fullscreen img { object-fit: contain; }
+    </style>
+</head>
+<body class="text-white relative z-10 lg:h-screen lg:overflow-hidden flex flex-col">
+
+    <!-- HEADER -->
+    <header class="relative z-10 border-b border-white/[0.06] bg-[#0c1118]/80 backdrop-blur-md px-6 py-2.5 shrink-0">
+        <div class="max-w-[1400px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3.5">
+                <div class="relative flex items-center justify-center w-5 h-5">
+                    <div class="absolute inset-0 rounded-full bg-red-400/20 animate-ping"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-red-400 pulse-dot relative z-10"></div>
+                </div>
+                <div>
+                    <p class="mono text-[9px] text-indigo-400/70 uppercase tracking-[0.25em] leading-none mb-1">Smart City</p>
+                    <h1 class="text-[14px] font-bold tracking-[0.15em] text-slate-100 uppercase leading-none">System Traffic Control</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-teal-400"></div>
+                    <span class="mono text-[9px] text-slate-500 uppercase tracking-widest">Online</span>
+                </div>
+                <span class="mono text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 px-3.5 py-1.5 rounded-full font-semibold tracking-widest uppercase">
+                    {{ mode }}
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 w-full max-w-[1400px] mx-auto mt-4 px-6 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 pb-3 flex-1 min-h-0">
+
+        <!-- VIDEO PANEL -->
+        <div class="flex flex-col gap-3 min-h-0">
+            <div class="glass-card rounded-2xl overflow-hidden shadow-2xl flex flex-col flex-1 min-h-0">
+                <!-- Panel header -->
+                <div class="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.06] shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-1 h-4 bg-indigo-400 rounded-full opacity-80"></div>
+                        <h2 class="text-[13px] font-semibold text-slate-300 tracking-wide">Kamera CCTV Statis — Video Processing</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btnExpand" class="btn-expand" title="Perbesar (atau klik dua kali pada video)">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                            <span id="btnExpandText">Perbesar</span>
+                        </button>
+                        <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-2.5 py-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></div>
+                            <span class="mono text-[9px] text-red-400 uppercase tracking-widest font-semibold">Live</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video -->
+                <div class="flex-1 min-h-0 flex items-center justify-center bg-black/40 p-3">
+                    <div id="videoBox" class="relative bg-black overflow-hidden rounded-lg">
+                        <img src="{{ url_for('video_feed') }}" class="w-full h-full object-cover" alt="Koneksi Kamera atau File Video Terputus">
+                        <div class="scanline absolute inset-0"></div>
+                        <div class="corner corner-tl"></div>
+                        <div class="corner corner-tr"></div>
+                        <div class="corner corner-bl"></div>
+                        <div class="corner corner-br"></div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-5 py-2 flex items-center justify-between border-t border-white/[0.04] shrink-0">
+                    <span class="mono text-[9px] text-slate-600 uppercase tracking-widest">MJPEG Stream</span>
+                    <span class="mono text-[9px] text-slate-600 uppercase tracking-widest">ROI Geofencing Active</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SIDE PANEL -->
+        <div class="flex flex-col gap-3 min-h-0 lg:overflow-y-auto">
+
+            <!-- Upload Panel -->
+            <div class="glass-card rounded-2xl overflow-hidden shadow-xl shrink-0">
+                <div class="flex items-center gap-2.5 px-5 py-2.5 border-b border-white/[0.06]">
+                    <div class="w-1 h-4 bg-amber-400 rounded-full opacity-80"></div>
+                    <h3 class="text-[12px] font-semibold text-slate-300 uppercase tracking-widest">Panel Input Data CCTV</h3>
+                </div>
+
+                <div class="p-4 space-y-3">
+                    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data" class="space-y-2.5">
+                        <div>
+                            <label for="fileInput" class="block mono text-[9px] text-slate-500 uppercase tracking-widest mb-2">Pilih File Video (.mp4)</label>
+                            <div class="file-drop">
+                                <input type="file" id="fileInput" name="file" accept="video/*,.mp4,.avi,.mov,.mkv">
+                            </div>
+                            <p id="fileInfo" class="text-[11px] text-slate-500 mt-1.5 truncate">Belum ada file dipilih</p>
+                        </div>
+                        <button type="submit" id="btnRun" class="btn-primary" disabled style="opacity:.5; cursor:not-allowed;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Jalankan Deteksi Video
+                        </button>
+                    </form>
+
+                    <div class="relative flex items-center">
+                        <div class="flex-grow border-t border-white/[0.06]"></div>
+                        <span class="mx-3 mono text-[9px] text-slate-600 uppercase tracking-widest">atau</span>
+                        <div class="flex-grow border-t border-white/[0.06]"></div>
+                    </div>
+
+                    <a href="/reset" class="btn-secondary">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M5.5 5.5A8.5 8.5 0 1 0 18.5 18.5"/></svg>
+                        Kembalikan ke Live Webcam
+                    </a>
+                </div>
+            </div>
+
+            <!-- ROI Rules -->
+            <div class="rounded-2xl overflow-hidden shadow-xl shrink-0" style="background: rgba(248,113,113,0.03); border: 1px solid rgba(248,113,113,0.12);">
+                <div class="flex items-center gap-2.5 px-5 py-2.5 border-b" style="border-color: rgba(248,113,113,0.1); background: rgba(248,113,113,0.04);">
+                    <div class="w-1 h-4 bg-red-400 rounded-full opacity-70"></div>
+                    <h3 class="text-[12px] font-semibold text-red-300/80 uppercase tracking-widest">Aturan Validasi Hukum ROI</h3>
+                </div>
+
+                <div class="p-4 space-y-2.5">
+                    <p class="text-[11.5px] text-slate-400 leading-relaxed">
+                        Titik roda terbawah kendaraan yang menetap di <span class="text-slate-300 font-medium">Zona Merah</span> dianggap pelanggaran.
+                    </p>
+
+                    <div class="alert-badge flex items-center gap-3 rounded-xl px-4 py-2" style="background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2);">
+                        <div class="w-2 h-2 rounded-full bg-red-400 animate-pulse flex-shrink-0"></div>
+                        <span class="mono text-[12px] font-bold text-red-300 tracking-wide">ALERT: Illegal Parking</span>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-[11px] text-slate-500">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm border-2 border-red-400"></span> Di zona larangan
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm border-2 border-teal-400"></span> Di luar zona
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="relative z-10 border-t border-white/[0.04] py-2 text-center shrink-0">
+        <p class="mono text-[9px] text-slate-700 uppercase tracking-[0.25em]">
+            © 2026 Smart Infrastructure Detection System &nbsp;·
+        </p>
+    </footer>
+
+    <script>
+        const box = document.getElementById('videoBox');
+        const btn = document.getElementById('btnExpand');
+        const btnText = document.getElementById('btnExpandText');
+
+        function toggleFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else if (box.requestFullscreen) {
+                box.requestFullscreen();
+            }
+        }
+
+        btn.addEventListener('click', toggleFullscreen);
+
+        // Upload video: tampilkan nama file, aktifkan tombol hanya jika file sudah dipilih
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const btnRun = document.getElementById('btnRun');
+        const uploadForm = document.getElementById('uploadForm');
+
+        fileInput.addEventListener('change', () => {
+            const f = fileInput.files[0];
+            if (f) {
+                fileInfo.textContent = f.name + ' (' + (f.size / 1048576).toFixed(1) + ' MB)';
+                fileInfo.style.color = '#a5b4fc';
+                btnRun.disabled = false;
+                btnRun.style.opacity = '1';
+                btnRun.style.cursor = 'pointer';
+            } else {
+                fileInfo.textContent = 'Belum ada file dipilih';
+                fileInfo.style.color = '';
+                btnRun.disabled = true;
+                btnRun.style.opacity = '.5';
+                btnRun.style.cursor = 'not-allowed';
+            }
+        });
+
+        uploadForm.addEventListener('submit', () => {
+            btnRun.disabled = true;
+            btnRun.textContent = 'Mengunggah...';
+        });
+        box.addEventListener('dblclick', toggleFullscreen);
+
+        document.addEventListener('fullscreenchange', () => {
+            btnText.textContent = document.fullscreenElement ? 'Kecilkan' : 'Perbesar';
+        });
+    </script>
+</body>
+</html>
